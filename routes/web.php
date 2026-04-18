@@ -19,29 +19,23 @@ Route::get('/about', function () {
     return view('about');
 });
 
-Route::get('/polls/results-test', function () {
-    return view('polls.results');
-});
-
-Route::get('/polls/builder-test', function () {
-    return view('polls.builder');
-});
-
 Route::get('/@{username}', [ProfileController::class, 'show'])->where('username', '[A-Za-z0-9-_]+');
 
-Route::resource('posts', PostController::class)->except(['index', 'show'])->middleware('auth');
 Route::resource('posts', PostController::class)->only(['index', 'show']);
-
-Route::singleton('my-profile', MyProfileController::class)->destroyable()->middleware('auth');
-
-Route::match(['put', 'patch'], '/likes/{post}', [LikeController::class, 'update'])->middleware('auth');
 
 Route::controller(AuthController::class)->group(function () {
     Route::get('/auth/register', 'showRegister');
     Route::post('/auth/register', 'register');
     Route::get('/auth/login', 'showLogin')->name('login');
     Route::post('/auth/login', 'login');
-    Route::post('/auth/logout', 'logout')->middleware('auth');
 });
 
-Route::resource('tokens', TokenController::class)->only(['index', 'create', 'store', 'destroy'])->middleware('auth');
+Route::middleware('auth')->group(function () {
+    Route::get('/polls/results', fn() => view('polls.results'));
+    Route::get('/polls/builder', fn() => view('polls.builder'));
+    Route::resource('posts', PostController::class)->except(['index', 'show']);
+    Route::singleton('my-profile', MyProfileController::class)->destroyable();
+    Route::match(['put', 'patch'], '/likes/{post}', [LikeController::class, 'update']);
+    Route::resource('tokens', TokenController::class)->only(['index', 'create', 'store', 'destroy']);
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+});

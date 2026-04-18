@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\v1\ApiPostController;
+use App\Http\Controllers\Api\v1\ApiFooController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -13,3 +14,8 @@ Route::apiResource('v1/posts', ApiPostController::class)
     ->middlewareFor(['store'], ['auth:sanctum', 'abilities:posts:create'])
     ->middlewareFor(['update'], ['auth:sanctum', 'abilities:posts:update'])
     ->middlewareFor(['destroy'], ['auth:sanctum', 'abilities:posts:delete']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/v1/foo', [ApiFooController::class, 'show']);
+    Route::post('/v1/foo', [ApiFooController::class, 'store']);
+});

@@ -1,8 +1,7 @@
+import './bootstrap';
 import { createApp } from 'vue';
-import PollBuilderApp from './polls/PollBuilderApp.vue';
+import App from './AppPollBuilder.vue';
 
-const mountPoint = document.getElementById('poll-builder-app');
-
-if (mountPoint) {
-    createApp(PollBuilderApp).mount(mountPoint);
-}
+const el = document.getElementById('app');
+const props = JSON.parse(el.dataset.props ?? '{}');
+createApp(App, props).mount(el);
