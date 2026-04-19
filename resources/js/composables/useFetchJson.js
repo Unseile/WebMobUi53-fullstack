@@ -1,4 +1,4 @@
-import { onScopeDispose, ref } from 'vue';
+import { onScopeDispose, ref, shallowRef } from 'vue';
 import { fetchJson } from '@/utils/fetchJson';
 
 /**
@@ -18,7 +18,7 @@ import { fetchJson } from '@/utils/fetchJson';
  */
 export function useFetchJson(options) {
   const data = ref(null);
-  const error = ref(null);
+  const error = shallowRef(null);
   const loading = ref(false);
 
   const fetchOptions = typeof options === 'string' ? { url: options } : options;

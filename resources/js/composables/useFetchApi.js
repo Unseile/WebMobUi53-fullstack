@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { ref, shallowRef } from "vue";
 
 const defaultHeaders = {
   'Content-Type': 'application/json',
@@ -129,7 +129,7 @@ export function useFetchApi(baseUrl = null, additionalHeaders = {}) {
    */
   function fetchApiToRef({ immediate = true, ...options }) {
     const data = ref(null);
-    const error = ref(null);
+    const error = shallowRef(null);
     const loading = ref(immediate);
 
     if (options?.url == null || typeof options?.url !== 'string') {

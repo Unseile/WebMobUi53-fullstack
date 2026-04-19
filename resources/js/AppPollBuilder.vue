@@ -9,7 +9,7 @@
 
   const { fetchApiToRef } = useFetchApi();
 
-  const { data: getResult, error: getError, fetchNow } = fetchApiToRef({ url: '/foo' });
+  const { data: getResult, error: getError, fetchNow } = fetchApiToRef({ url: 'polls/Fx9xzVKwQb6EeBF9IAGsRcTPXahiwjV' });
   const { data: postResult, error: postError } = fetchApiToRef({ url: '/foo', data: { id: 1 } });
 
   function handleError(err) {
@@ -21,7 +21,7 @@
     }
   }
 
-  watch(getError, handleError);
+  watch(getError, err => handleError(err));
   watch(postError, handleError);
 
   usePolling(fetchNow);
