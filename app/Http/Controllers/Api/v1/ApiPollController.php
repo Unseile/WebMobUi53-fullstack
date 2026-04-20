@@ -12,11 +12,11 @@ class ApiPollController extends Controller
      * Display a listing of the authenticated user's polls.
      */
     public function index(Request $request)
-    {
-        $polls = $request->user()->polls()->orderBy('created_at', 'desc')->get();
+{
+    $polls = $request->user()->polls()->orderBy('created_at', 'desc')->get();   
 
-        return $polls;
-    }
+    return $polls;
+}
 
     /**
      * Display the specified poll by its secret token.

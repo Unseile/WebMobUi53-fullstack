@@ -32,7 +32,7 @@ Route::controller(AuthController::class)->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/polls/dashboard', PollDashboardController::class)->name('polls.dashboard');
+    // Route::get('/polls/dashboard', PollDashboardController::class)->name('polls.dashboard');
     Route::get('/polls/dashboard-integrated', fn() => view('polls.dashboard-integrated'))
         ->name('polls.dashboard-integrated');
     Route::resource('posts', PostController::class)->except(['index', 'show']);
