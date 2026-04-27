@@ -1,10 +1,28 @@
 <script setup>
+  import {useFetchApi} from '../composables/useFetchApi';
+
   defineProps({
     polls: { type: Array, default: () => [] },
   });
+
+  const {fetchApi} = useFetchApi();
+  const emit = defineEmits(['poll-deleted', 'create-poll']);
+
+  function fetchDelete(pollId) {
+  fetchApi({ url: `/polls/${pollId}`, method: 'DELETE' })
+    .then(() => {
+      console.log('Poll deleted successfully');
+    })
+    .catch(error => {
+      console.error('Error deleting poll:', error);
+    }); 
+}
 </script>
 
 <template>
+  <button @click="emit('create-poll')" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                Créer un sondage
+  </button>
   <p v-if="polls.length === 0">Aucun sondage.</p>
 
   <table v-else class="w-full border-collapse text-left">
@@ -26,6 +44,7 @@
         <td class="border px-3 py-2">{{ poll.is_draft ? 'Oui' : 'Non' }}</td>
         <td class="border px-3 py-2">{{ poll.started_at || '-' }}</td>
         <td class="border px-3 py-2">{{ poll.ends_at || '-' }}</td>
+        <td><button @click="fetchDelete(poll.id)">🗑️</button></td>
       </tr>
     </tbody>
   </table>

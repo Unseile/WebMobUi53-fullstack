@@ -2,11 +2,18 @@
 import { watch } from "vue";
 import { useFetchApi } from "./composables/useFetchApi";
 import { usePolling } from "./composables/usePolling";
+import { useHashRoute } from "./composables/useHashRoute";
 import PollTable from './components/PollTable.vue';
+import CreatePoll from "./components/CreatePoll.vue";
 
 const props = defineProps({
     loginUrl: { type: String, default: null },
 });
+
+const { currentComponent, navigateTo } = useHashRoute([
+    { hash: '#/', component: PollTable },
+    { hash: '#/polls/config', component: CreatePoll },
+]);
 
 const { fetchApiToRef } = useFetchApi();
 
@@ -15,6 +22,7 @@ const {
     error: getError,
     fetchNow,
 } = fetchApiToRef({ url: "polls/" });
+
 const { data: postResult, error: postError } = fetchApiToRef({
     url: "/foo",
     data: { id: 1 },
@@ -33,32 +41,21 @@ watch(getError, (err) => handleError(err));
 watch(postError, handleError);
 
 usePolling(fetchNow);
+
 </script>
 
 <template>
     <main class="min-h-screen p-6">
     <h1 class="mb-4 text-xl font-semibold">Dashboard intégré</h1>
-
-    <PollTable :polls="getResult || []" />
-
-    <!-- <section class="mt-6">
-      <h2>GET /api/v1/polls</h2>
-      <pre v-if="getResult">{{ getResult }}</pre>
-      <p v-else>Chargement...</p>
-    </section> -->
+        <component
+        :is="currentComponent"
+        :polls="getResult || []"
+        @create-poll="navigateTo('#/polls/config')"
+        @cancel="navigateTo('#/')"
+        @created="navigateTo('#/'); fetchNow()"
+        @poll-deleted="fetchNow"
+        />
   </main>
-<!-- 
-    <section>
-        <h2>GET /api/v1/polls</h2>
-        <pre v-if="getResult">{{ getResult }}</pre>
-        <p v-else>Chargement...</p>
-    </section>
-
-    <section>
-        <h2>POST /api/v1/foo</h2>
-        <pre v-if="postResult">{{ postResult }}</pre>
-        <p v-else>Chargement...</p>
-    </section> -->
 </template>
 
 <style scoped>
