@@ -6,7 +6,7 @@
   });
 
   const {fetchApi} = useFetchApi();
-  const emit = defineEmits(['poll-deleted', 'create-poll']);
+  const emit = defineEmits(['poll-deleted', 'create-poll', 'edit-poll']);
 
   function fetchDelete(pollId) {
   fetchApi({ url: `/polls/${pollId}`, method: 'DELETE' })
@@ -20,7 +20,7 @@
 </script>
 
 <template>
-  <button @click="emit('create-poll')" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+  <button @click="emit('create-poll')" class="px-4 py-2 mb-4 bg-blue-600 text-white rounded hover:bg-blue-700">
                 Créer un sondage
   </button>
   <p v-if="polls.length === 0">Aucun sondage.</p>
@@ -44,7 +44,8 @@
         <td class="border px-3 py-2">{{ poll.is_draft ? 'Oui' : 'Non' }}</td>
         <td class="border px-3 py-2">{{ poll.started_at || '-' }}</td>
         <td class="border px-3 py-2">{{ poll.ends_at || '-' }}</td>
-        <td><button @click="fetchDelete(poll.id)">🗑️</button></td>
+        <td><button @click="emit('edit-poll', poll)" class="px-2 cursor-pointer">✏️</button></td>
+        <td><button @click="fetchDelete(poll.id)" class="px-2 cursor-pointer">🗑️</button></td>
       </tr>
     </tbody>
   </table>

@@ -20,7 +20,9 @@ Route::get('/v1/polls/{token}', [ApiPollController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/v1/foo', [ApiFooController::class, 'show']);
-    Route::post('/v1/foo', [ApiFooController::class, 'store']);
+    // Route::post('/v1/foo', [ApiFooController::class, 'store']);
+    Route::post('/v1/polls', [ApiPollController::class, 'store']);
     Route::get('/v1/polls', [ApiPollController::class, 'index']);
+    Route::put('/v1/polls/{id}', [ApiPollController::class, 'update']);
     Route::delete('/v1/polls/{id}', [ApiPollController::class, 'destroy']);
 });

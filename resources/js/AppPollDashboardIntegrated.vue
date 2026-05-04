@@ -1,10 +1,18 @@
 <script setup>
-import { watch } from "vue";
+import { ref, watch } from "vue";
 import { useFetchApi } from "./composables/useFetchApi";
 import { usePolling } from "./composables/usePolling";
 import { useHashRoute } from "./composables/useHashRoute";
 import PollTable from './components/PollTable.vue';
 import CreatePoll from "./components/CreatePoll.vue";
+import EditPoll from './components/EditPoll.vue';
+
+const selectedPoll = ref(null);
+
+function editPoll(poll) {
+    selectedPoll.value = poll;
+    navigateTo('#/polls/edit');
+}
 
 const props = defineProps({
     loginUrl: { type: String, default: null },
@@ -13,6 +21,7 @@ const props = defineProps({
 const { currentComponent, navigateTo } = useHashRoute([
     { hash: '#/', component: PollTable },
     { hash: '#/polls/config', component: CreatePoll },
+    { hash: '#/polls/edit', component: EditPoll },
 ]);
 
 const { fetchApiToRef } = useFetchApi();
@@ -46,16 +55,30 @@ usePolling(fetchNow);
 
 <template>
     <main class="min-h-screen p-6">
-    <h1 class="mb-4 text-xl font-semibold">Dashboard intégré</h1>
-        <component
-        :is="currentComponent"
-        :polls="getResult || []"
-        @create-poll="navigateTo('#/polls/config')"
-        @cancel="navigateTo('#/')"
-        @created="navigateTo('#/'); fetchNow()"
-        @poll-deleted="fetchNow"
+        <h1 class="mb-4 text-xl font-semibold">Dashboard intégré</h1>
+
+        <PollTable
+            v-if="currentComponent === PollTable"
+            :polls="getResult || []"
+            @create-poll="navigateTo('#/polls/config')"
+            @edit-poll="editPoll"
+            @poll-deleted="fetchNow"
         />
-  </main>
+
+        <CreatePoll
+            v-else-if="currentComponent === CreatePoll"
+            @cancel="navigateTo('#/')"
+            @created="navigateTo('#/'); fetchNow()"
+        />
+
+        <EditPoll
+            v-else-if="currentComponent === EditPoll"
+            :poll="selectedPoll"
+            @cancel="navigateTo('#/')"
+            @updated="navigateTo('#/'); fetchNow()"
+        />
+
+    </main>
 </template>
 
 <style scoped>

@@ -8,9 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PollOption extends Model
 {
-    /**
-     * Get the poll that owns the option.
-     */
+    protected $fillable = ['label']; 
+    
     public function poll(): BelongsTo
     {
         return $this->belongsTo(Poll::class);
