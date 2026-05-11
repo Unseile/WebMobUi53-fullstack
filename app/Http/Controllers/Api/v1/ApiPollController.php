@@ -14,7 +14,11 @@ class ApiPollController extends Controller
      */
     public function index(Request $request)
 {
-    $polls = $request->user()->polls()->orderBy('created_at', 'desc')->get();   
+    $polls = $request->user()->polls()
+        ->with('options')
+        ->select(['id', 'title', 'question', 'allow_multiple_choices', 'results_public', 'ends_at', 'started_at', 'is_draft', 'user_id', 'created_at', 'updated_at'])
+        ->orderBy('created_at', 'desc')
+        ->get();   
 
     return $polls;
 }

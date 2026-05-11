@@ -1,54 +1,78 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useFetchApi } from '../composables/useFetchApi';
 
 const props = defineProps({
-    poll: { type: Object, required: true },
+  poll: { type: Object, required: true },
 });
 
 const emit = defineEmits(['cancel', 'updated']);
 const { fetchApi } = useFetchApi();
 
-const form = ref({
-    title:                  props.poll.title || '',
-    question:               props.poll.question || '',
-    options:                props.poll.options?.map(o => o.label) || ['', ''],
-    allow_multiple_choices: props.poll.allow_multiple_choices || false,
-    results_public:         props.poll.results_public || false,
-    ends_at:                props.poll.ends_at || '',
-    start_now:              false,
-    scheduled_at:           '',
-});
+function formatDateTimeLocal(value) {
+  if (!value) return '';
+
+  const normalized = value.replace(' ', 'T').slice(0, 16);
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(normalized)) {
+    return normalized;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toISOString().slice(0, 16);
+}
+function createFormFromPoll(poll) {
+  return {
+    title: poll?.title || '',
+    question: poll?.question || '',
+    options: poll?.options?.map(o => o.label) || ['', ''],
+    allow_multiple_choices: Boolean(poll?.allow_multiple_choices),
+    results_public: Boolean(poll?.results_public),
+    ends_at: formatDateTimeLocal(poll?.ends_at),
+    start_now: false,
+    scheduled_at: '',
+  };
+}
+
+const form = ref(createFormFromPoll(props.poll));
+
+watch(
+  () => props.poll,
+  (newPoll) => {
+    form.value = createFormFromPoll(newPoll);
+  },
+  { immediate: true }
+);
 
 const error = ref(null);
 const loading = ref(false);
 
 function addOption() {
-    form.value.options.push('');
+  form.value.options.push('');
 }
 
 function removeOption(index) {
-    if (form.value.options.length <= 2) return;
-    form.value.options.splice(index, 1);
+  if (form.value.options.length <= 2) return;
+  form.value.options.splice(index, 1);
 }
 
 function submitForm() {
-    if (!form.value.question) {
-        error.value = 'La question est obligatoire.';
-        return;
-    }
-    if (form.value.options.some(o => o.trim() === '')) {
-        error.value = 'Toutes les options doivent être remplies.';
-        return;
-    }
+  if (!form.value.question) {
+    error.value = 'La question est obligatoire.';
+    return;
+  }
+  if (form.value.options.some(o => o.trim() === '')) {
+    error.value = 'Toutes les options doivent être remplies.';
+    return;
+  }
 
-    loading.value = true;
-    error.value = null;
+  loading.value = true;
+  error.value = null;
 
-    fetchApi({ url: `/polls/${props.poll.id}`, method: 'PUT', data: form.value })
-        .then(() => emit('updated'))
-        .catch(err => error.value = err?.data?.message || 'Une erreur est survenue.')
-        .finally(() => loading.value = false);
+  fetchApi({ url: `/polls/${props.poll.id}`, method: 'PUT', data: form.value })
+    .then(() => emit('updated'))
+    .catch(err => error.value = err?.data?.message || 'Une erreur est survenue.')
+    .finally(() => loading.value = false);
 }
 </script>
 
@@ -136,9 +160,11 @@ function submitForm() {
                 <input
                     v-model="form.ends_at"
                     type="datetime-local"
+                    step="60"
                     class="w-full border rounded px-3 py-2 text-sm"
                 />
             </div>
+
 
             <!-- Démarrage (seulement si encore en brouillon) -->
             <div v-if="poll.is_draft" class="border rounded p-3">
