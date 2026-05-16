@@ -28,7 +28,7 @@ function removeOption(index) {
     form.value.options.splice(index, 1);
 }
 
-function submitForm() {
+async function submitForm() {
     if (!form.value.question) {
         error.value = 'La question est obligatoire.';
         return;
@@ -57,11 +57,17 @@ function submitForm() {
     loading.value = true;
     error.value = null;
 
-    fetchApi({ url: '/polls', method: 'POST', data })
-        .then(() => emit('created'))
-        .catch(err => error.value = err?.data?.message || 'Une erreur est survenue.')
-        .finally(() => loading.value = false);
+    try {
+        const res = await fetchApi({ url: '/polls', method: 'POST', data });
+        const poll = res?.data ?? res;
+        emit('created', poll);
+    } catch (err) {
+        error.value = err?.data?.message || 'Une erreur est survenue.';
+    } finally {
+        loading.value = false;
+    }
 }
+
 </script>
 
 <template>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\v1\ApiPollController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\MyProfileController;
@@ -40,4 +41,8 @@ Route::middleware('auth')->group(function () {
     Route::match(['put', 'patch'], '/likes/{post}', [LikeController::class, 'update']);
     Route::resource('tokens', TokenController::class)->only(['index', 'create', 'store', 'destroy']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
+});
+
+Route::get('/polls/{token}', function () {
+    return view('polls.dashboard-integrated');
 });

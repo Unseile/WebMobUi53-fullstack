@@ -16,7 +16,7 @@ class ApiPollController extends Controller
 {
     $polls = $request->user()->polls()
         ->with('options')
-        ->select(['id', 'title', 'question', 'allow_multiple_choices', 'results_public', 'ends_at', 'started_at', 'is_draft', 'user_id', 'created_at', 'updated_at'])
+        ->select(['id', 'title', 'question', 'allow_multiple_choices', 'results_public', 'ends_at', 'started_at', 'is_draft', 'user_id', 'created_at', 'updated_at', 'secret_token'])
         ->orderBy('created_at', 'desc')
         ->get();   
 
@@ -138,5 +138,31 @@ class ApiPollController extends Controller
         $poll->delete();
 
         return response()->json(['message' => 'Poll deleted successfully.']);
+    }
+
+    public function vote(Request $request, Poll $poll)
+    {
+        $request->validate([
+            'options'   => 'required|array|min:1',
+            'options.*' => 'integer|exists:poll_options,id',
+        ]);
+
+        if ($poll->is_draft || ($poll->ends_at && now()->greaterThan($poll->ends_at))) {
+            return response()->json(['message' => 'Ce sondage n’est pas ouvert au vote.'], 403);
+        }
+
+        $user = $request->user();
+
+        // si on n’autorise qu’un seul vote par utilisateur
+        $poll->votes()->where('user_id', $user->id)->delete();
+
+        foreach ($request->input('options') as $optionId) {
+            $poll->votes()->create([
+                'user_id'      => $user->id,
+                'poll_option_id' => $optionId,
+            ]);
+        }
+
+        return response()->json($poll->options()->withCount('votes')->get());
     }
 }
