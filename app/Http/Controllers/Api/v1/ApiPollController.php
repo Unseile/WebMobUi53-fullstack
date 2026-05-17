@@ -37,7 +37,6 @@ class ApiPollController extends Controller
             return response()->json(['message' => 'Poll not found.'], 404);
         }
 
-        // Vérifie si l'utilisateur connecté a déjà voté
         $alreadyVoted = false;
         if (auth('sanctum')->check()) {
             $alreadyVoted = PollVote::where('poll_id', $poll->id)
@@ -124,17 +123,14 @@ class ApiPollController extends Controller
             'started_at'             => $startNow ? now() : ($scheduledAt ?? $poll->started_at),
         ]);
 
-        // Mise à jour des options si fournies
         if (isset($validated['options'])) {
             $existingOptions = $poll->options->pluck('label')->toArray();
             $newOptions = $validated['options'];
 
-            // Ne touche aux options que si elles ont changé
             if (array_values($existingOptions) !== array_values($newOptions)) {
-                // Supprime uniquement les options qui ne sont plus dans la liste
+
                 $poll->options()->whereNotIn('label', $newOptions)->delete();
 
-                // Ajoute uniquement les nouvelles options
                 $existingLabels = $poll->options()->pluck('label')->toArray();
                 foreach ($newOptions as $label) {
                     if (!in_array($label, $existingLabels)) {
@@ -150,12 +146,12 @@ class ApiPollController extends Controller
     {
         $poll = Poll::find($id);
 
-        if ($poll->user_id !== $request->user()->id) {
-            return response()->json(['message' => 'Unauthorized.'], 403);
-        }
-
         if (!$poll) {
             return response()->json(['message' => 'Poll not found.'], 404);
+        }
+
+        if ($poll->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
         $poll->delete();
@@ -174,6 +170,11 @@ class ApiPollController extends Controller
         if ($poll->is_draft) {
             return response()->json(['message' => 'Ce sondage est en brouillon.'], 403);
         }
+
+        if ($poll->ends_at && now()->isAfter($poll->ends_at)) {
+            return response()->json(['message' => 'Ce sondage est terminé.'], 403);
+        }
+
 
         $alreadyVoted = PollVote::where('poll_id', $poll->id)
                                 ->where('user_id', $request->user()->id)
@@ -220,7 +221,6 @@ class ApiPollController extends Controller
             return response()->json(['message' => 'Poll not found.'], 404);
         }
 
-        // Si les résultats ne sont pas publics, vérifie que l'utilisateur est authentifié et propriétaire
         if (!$poll->results_public) {
             $user = auth('sanctum')->user();
 

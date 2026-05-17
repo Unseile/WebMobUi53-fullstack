@@ -27,7 +27,7 @@ const isPollExpired = computed(() => {
 });
 
 const isOwner = computed(() => {
-    return props.currentUserId && localPoll.value?.user_id == props.currentUserId; // ← == au lieu de ===
+    return props.currentUserId && localPoll.value?.user_id == props.currentUserId;
 });
 
 watch(() => props.poll, (p) => {
@@ -52,7 +52,7 @@ async function loadPollFromToken() {
     try {
         const res = await fetchApi({ url: `/polls/${token}`, method: 'GET' });
         localPoll.value = res;
-        if (res.already_voted) voted.value = true; // ← ajout
+        if (res.already_voted) voted.value = true;
     } catch (err) {
         if (err?.status === 404) error.value = 'Sondage introuvable.';
         else if (err?.status === 401) error.value = 'Vous devez être connecté pour voir ce sondage.';
@@ -97,10 +97,6 @@ async function submitVote() {
 async function refreshResults() {
     if (!localPoll.value) return;
     
-    // Ne rafraîchit que si :
-    // - résultats publics
-    // - ou utilisateur authentifié et a voté
-    // - ou créateur
     if (!localPoll.value.results_public && !voted.value && !isOwner.value) return;
 
     try {
@@ -121,7 +117,7 @@ function getPercentage(option, options) {
     return Math.round((option.votes_count ?? 0) / total * 100);
 }
 
-usePolling(refreshResults, 5000); // ← rafraîchit toutes les 5 secondes
+usePolling(refreshResults, 2000);
 
 onMounted(() => {
   if (!localPoll.value) loadPollFromToken();
@@ -140,12 +136,12 @@ onMounted(() => {
 
       <!-- Sondage expiré -->
       <div v-if="isPollExpired" class="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-600">
-        Ce sondage est terminé depuis le {{ new Date(localPoll.ends_at).toLocaleString('fr-CH') }}.
-        Il n'est plus possible de voter.
+          Ce sondage est terminé depuis le {{ new Date(localPoll.ends_at).toLocaleString('fr-CH') }}.
+          Il n'est plus possible de voter.
       </div>
 
       <!-- Message déjà voté -->
-      <div v-if="voted && !results" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-600">
+      <div v-else-if="voted && !results" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-600">
           Vous avez déjà participé à ce sondage.
       </div>
 
@@ -177,9 +173,6 @@ onMounted(() => {
 
       <!-- Résultats — après vote OU résultats publics OU créateur (pas avant vote si authentifié) -->
       <div v-if="isOwner || voted || (localPoll.results_public && (!props.isAuthenticated || voted))">
-        <h3 class="text-sm font-medium mb-3 text-gray-600">
-          {{ voted ? 'Résultats' : 'Résultats en direct' }}
-        </h3>
         <ul class="space-y-3">
           <li v-for="opt in (results ?? localPoll.options)" :key="opt.id">
             <div class="flex justify-between text-sm mb-1">

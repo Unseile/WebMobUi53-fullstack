@@ -26,7 +26,6 @@ function syncPathFromUrl() {
     showTokenPath.value = /^\/polls\/[0-9a-fA-F-]{36}$/.test(path);
 }
 
-// ← un seul defineProps avec tout dedans
 const props = defineProps({
     loginUrl: { type: String, default: null },
     isAuthenticated: { type: Boolean, default: false },
@@ -80,7 +79,6 @@ onBeforeUnmount(() => {
     <main class="min-h-screen p-6">
         <h1 class="mb-4 text-xl font-semibold">Dashboard intégré</h1>
 
-        <!-- Page publique via token dans l'URL -->
         <ShowPoll
             v-if="showTokenPath"
             :poll="selectedPoll"
@@ -91,7 +89,6 @@ onBeforeUnmount(() => {
             @updated="navigateTo('#/'); fetchNow()"
         />
 
-        <!-- Dashboard normal -->
         <template v-else>
             <PollTable
                 v-if="currentComponent === PollTable"

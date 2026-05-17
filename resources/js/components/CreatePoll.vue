@@ -126,7 +126,7 @@ async function submitForm() {
                         ✕
                     </button>
                 </div>
-                <button @click="addOption" class="text-sm text-blue-600 hover:underline mt-1">
+                <button @click="addOption" class="text-sm text-purple-700 hover:underline mt-1">
                     + Ajouter une option
                 </button>
             </div>
@@ -185,7 +185,7 @@ async function submitForm() {
                 <button
                     @click="submitForm"
                     :disabled="loading"
-                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                    class="px-4 py-2 bg-purple-800 text-white rounded hover:bg-purple-700 disabled:opacity-50"
                 >
                     {{ loading ? 'Création...' : 'Créer' }}
                 </button>
