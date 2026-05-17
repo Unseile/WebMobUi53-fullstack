@@ -7,5 +7,9 @@
     Dashboard des sondages intégré
   </x-slot>
 
-  <div id="app" data-props='@json(["loginUrl" => route("login")])'></div>
+   <div id="app" data-props="{{ json_encode([
+    'loginUrl' => route('login'),
+    'isAuthenticated' => auth()->check(),
+    'currentUserId' => auth()->id(),
+  ]) }}"></div>
 </x-default-layout>

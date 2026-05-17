@@ -9,7 +9,7 @@
   const showTokenModal = ref(false);
   const selectedToken = ref('');
   const {fetchApi} = useFetchApi();
-  const emit = defineEmits(['poll-deleted', 'create-poll', 'edit-poll']);
+  const emit = defineEmits(['poll-deleted', 'create-poll', 'edit-poll', 'show-poll']);
 
   function fetchDelete(pollId) {
   fetchApi({ url: `/polls/${pollId}`, method: 'DELETE' })
@@ -64,7 +64,7 @@ function closeTokenModal() {
         <td><button @click="emit('edit-poll', poll)" class="px-2 cursor-pointer">✏️</button></td>
         <td><button @click="fetchDelete(poll.id)" class="px-2 cursor-pointer">🗑️</button></td>
         <td><button @click="openTokenModal(poll.secret_token)" class="px-2 cursor-pointer y-1 text-sm bg-purple-800 rounded hover:bg-purple-700">token</button></td>
-        <td><button @click="" class="px-2 cursor-pointer y-1 text-sm bg-green-700 rounded hover:bg-green-600">voir</button></td>
+        <td><button @click="emit('show-poll', poll)" class="px-2 cursor-pointer y-1 text-sm bg-green-700 rounded hover:bg-green-600">voir</button></td>
       </tr>
     </tbody>
   </table>

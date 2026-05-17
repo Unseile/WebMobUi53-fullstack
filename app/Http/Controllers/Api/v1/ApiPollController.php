@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Poll;
+use App\Models\PollVote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -36,7 +37,18 @@ class ApiPollController extends Controller
             return response()->json(['message' => 'Poll not found.'], 404);
         }
 
-        return $poll;
+        // Vérifie si l'utilisateur connecté a déjà voté
+        $alreadyVoted = false;
+        if (auth('sanctum')->check()) {
+            $alreadyVoted = PollVote::where('poll_id', $poll->id)
+                                    ->where('user_id', auth('sanctum')->id())
+                                    ->exists();
+        }
+
+        return response()->json([
+            ...$poll->toArray(),
+            'already_voted' => $alreadyVoted,
+        ]);
     }
 
     public function store(Request $request)
@@ -114,12 +126,23 @@ class ApiPollController extends Controller
 
         // Mise à jour des options si fournies
         if (isset($validated['options'])) {
-            $poll->options()->delete();
-            foreach ($validated['options'] as $label) {
-                $poll->options()->create(['label' => $label]);
+            $existingOptions = $poll->options->pluck('label')->toArray();
+            $newOptions = $validated['options'];
+
+            // Ne touche aux options que si elles ont changé
+            if (array_values($existingOptions) !== array_values($newOptions)) {
+                // Supprime uniquement les options qui ne sont plus dans la liste
+                $poll->options()->whereNotIn('label', $newOptions)->delete();
+
+                // Ajoute uniquement les nouvelles options
+                $existingLabels = $poll->options()->pluck('label')->toArray();
+                foreach ($newOptions as $label) {
+                    if (!in_array($label, $existingLabels)) {
+                        $poll->options()->create(['label' => $label]);
+                    }
+                }
             }
         }
-
         return response()->json($poll->load('options'), 200);
     }
 
@@ -140,29 +163,76 @@ class ApiPollController extends Controller
         return response()->json(['message' => 'Poll deleted successfully.']);
     }
 
-    public function vote(Request $request, Poll $poll)
+   public function vote(Request $request, string $id)
     {
-        $request->validate([
-            'options'   => 'required|array|min:1',
-            'options.*' => 'integer|exists:poll_options,id',
-        ]);
+        $poll = Poll::with('options')->find($id);
 
-        if ($poll->is_draft || ($poll->ends_at && now()->greaterThan($poll->ends_at))) {
-            return response()->json(['message' => 'Ce sondage n’est pas ouvert au vote.'], 403);
+        if (!$poll) {
+            return response()->json(['message' => 'Poll not found.'], 404);
         }
 
-        $user = $request->user();
+        if ($poll->is_draft) {
+            return response()->json(['message' => 'Ce sondage est en brouillon.'], 403);
+        }
 
-        // si on n’autorise qu’un seul vote par utilisateur
-        $poll->votes()->where('user_id', $user->id)->delete();
+        $alreadyVoted = PollVote::where('poll_id', $poll->id)
+                                ->where('user_id', $request->user()->id)
+                                ->exists();
 
-        foreach ($request->input('options') as $optionId) {
-            $poll->votes()->create([
-                'user_id'      => $user->id,
+        if ($alreadyVoted) {
+            return response()->json(['message' => 'Vous avez déjà voté.'], 403);
+        }
+
+        $validated = $request->validate([
+            'options'   => 'required|array|min:1',
+            'options.*' => 'required|integer|exists:poll_options,id',
+        ]);
+
+        if (!$poll->allow_multiple_choices && count($validated['options']) > 1) {
+            return response()->json(['message' => 'Ce sondage n\'autorise qu\'un seul choix.'], 422);
+        }
+
+        $validOptionIds = $poll->options->pluck('id')->toArray();
+        foreach ($validated['options'] as $optionId) {
+            if (!in_array($optionId, $validOptionIds)) {
+                return response()->json(['message' => 'Option invalide.'], 422);
+            }
+        }
+
+        foreach ($validated['options'] as $optionId) {
+            PollVote::create([
+                'poll_id'        => $poll->id,
+                'user_id'        => $request->user()->id,
                 'poll_option_id' => $optionId,
             ]);
         }
 
-        return response()->json($poll->options()->withCount('votes')->get());
+        $options = $poll->options()->withCount('votes')->get();
+
+        return response()->json($options);
+    }
+
+    public function results(string $id)
+    {
+        $poll = Poll::find($id);
+
+        if (!$poll) {
+            return response()->json(['message' => 'Poll not found.'], 404);
+        }
+
+        // Si les résultats ne sont pas publics, vérifie que l'utilisateur est authentifié et propriétaire
+        if (!$poll->results_public) {
+            $user = auth('sanctum')->user();
+
+            if (!$user || $user->id !== $poll->user_id) {
+                return response()->json(['message' => 'Les résultats ne sont pas publics.'], 403);
+            }
+        }
+
+        $options = $poll->options()->withCount('votes')->get();
+
+        return response()->json($options)
+        ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
+        ->header('Pragma', 'no-cache');
     }
 }

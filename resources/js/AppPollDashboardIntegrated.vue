@@ -16,13 +16,21 @@ function editPoll(poll) {
     navigateTo('#/polls/edit');
 }
 
+function showPoll(poll) {
+    selectedPoll.value = poll;
+    navigateTo('#/polls/show');
+}
+
 function syncPathFromUrl() {
     const path = window.location.pathname;
     showTokenPath.value = /^\/polls\/[0-9a-fA-F-]{36}$/.test(path);
 }
 
+// ← un seul defineProps avec tout dedans
 const props = defineProps({
     loginUrl: { type: String, default: null },
+    isAuthenticated: { type: Boolean, default: false },
+    currentUserId: { type: Number, default: null },
 });
 
 const { currentComponent, navigateTo } = useHashRoute([
@@ -34,16 +42,21 @@ const { currentComponent, navigateTo } = useHashRoute([
 
 const { fetchApiToRef } = useFetchApi();
 
+const isTokenPath = /^\/polls\/[0-9a-fA-F-]{36}$/.test(window.location.pathname);
+
 const {
     data: getResult,
     error: getError,
     fetchNow,
-} = fetchApiToRef({ url: "polls/" });
+} = fetchApiToRef({ 
+    url: "polls/",
+    immediate: !isTokenPath,
+});
 
 function handleError(err) {
     if (!err) return;
     if (err?.status === 401) {
-        window.location.href = props.loginUrl;
+        if (!isTokenPath) window.location.href = props.loginUrl;
     } else {
         console.error(err);
     }
@@ -51,7 +64,7 @@ function handleError(err) {
 
 watch(getError, (err) => handleError(err));
 
-usePolling(fetchNow);
+if (!isTokenPath) usePolling(fetchNow);
 
 onMounted(() => {
     syncPathFromUrl();
@@ -61,47 +74,57 @@ onMounted(() => {
 onBeforeUnmount(() => {
     window.removeEventListener('popstate', syncPathFromUrl);
 });
-
 </script>
 
 <template>
     <main class="min-h-screen p-6">
         <h1 class="mb-4 text-xl font-semibold">Dashboard intégré</h1>
 
+        <!-- Page publique via token dans l'URL -->
         <ShowPoll
             v-if="showTokenPath"
             :poll="selectedPoll"
+            :is-authenticated="props.isAuthenticated"
+            :login-url="props.loginUrl"
+            :current-user-id="props.currentUserId"
             @cancel="window.location.href = '/polls/dashboard-integrated'"
             @updated="navigateTo('#/'); fetchNow()"
         />
 
-        <PollTable
-            v-else-if="currentComponent === PollTable"
-            :polls="getResult || []"
-            @create-poll="navigateTo('#/polls/config')"
-            @edit-poll="editPoll"
-            @poll-deleted="fetchNow"
-        />
+        <!-- Dashboard normal -->
+        <template v-else>
+            <PollTable
+                v-if="currentComponent === PollTable"
+                :polls="getResult || []"
+                @create-poll="navigateTo('#/polls/config')"
+                @edit-poll="editPoll"
+                @show-poll="showPoll"
+                @poll-deleted="fetchNow"
+            />
 
-        <CreatePoll
-            v-else-if="currentComponent === CreatePoll"
-            @cancel="navigateTo('#/')"
-            @created="navigateTo('#/'); fetchNow()"
-        />
+            <CreatePoll
+                v-else-if="currentComponent === CreatePoll"
+                @cancel="navigateTo('#/')"
+                @created="navigateTo('#/'); fetchNow()"
+            />
 
-        <EditPoll
-            v-else-if="currentComponent === EditPoll"
-            :poll="selectedPoll"
-            @cancel="navigateTo('#/')"
-            @updated="navigateTo('#/'); fetchNow()"
-        />
+            <EditPoll
+                v-else-if="currentComponent === EditPoll"
+                :poll="selectedPoll"
+                @cancel="navigateTo('#/')"
+                @updated="navigateTo('#/'); fetchNow()"
+            />
 
-        <ShowPoll
-            v-else-if="currentComponent === ShowPoll"
-            :poll="selectedPoll"
-            @cancel="navigateTo('#/')"
-            @updated="navigateTo('#/'); fetchNow()"
-        />
+            <ShowPoll
+                v-else-if="currentComponent === ShowPoll"
+                :poll="selectedPoll"
+                :is-authenticated="props.isAuthenticated"
+                :login-url="props.loginUrl"
+                :current-user-id="props.currentUserId"
+                @cancel="navigateTo('#/')"
+                @updated="navigateTo('#/'); fetchNow()"
+            />
+        </template>
 
     </main>
 </template>
