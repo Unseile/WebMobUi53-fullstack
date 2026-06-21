@@ -11,5 +11,6 @@
     'loginUrl' => route('login'),
     'isAuthenticated' => auth()->check(),
     'currentUserId' => auth()->id(),
+    'initialPolls' => $polls ?? [],
   ]) }}"></div>
 </x-default-layout>

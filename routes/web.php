@@ -6,6 +6,7 @@ use App\Http\Controllers\MyProfileController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TokenController;
+use App\Http\Controllers\PollDashboardController;
 use App\Models\Post;
 use Illuminate\Support\Facades\Route;
 
@@ -31,7 +32,7 @@ Route::controller(AuthController::class)->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/polls/dashboard-integrated', fn() => view('polls.dashboard-integrated'))
+    Route::get('/polls/dashboard-integrated', PollDashboardController::class)
         ->name('polls.dashboard-integrated');
     Route::resource('posts', PostController::class)->except(['index', 'show']);
     Route::singleton('my-profile', MyProfileController::class)->destroyable();

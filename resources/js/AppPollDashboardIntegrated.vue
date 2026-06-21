@@ -30,6 +30,7 @@ const props = defineProps({
     loginUrl: { type: String, default: null },
     isAuthenticated: { type: Boolean, default: false },
     currentUserId: { type: Number, default: null },
+    initialPolls: { type: Array, default: () => [] },
 });
 
 const { currentComponent, navigateTo } = useHashRoute([
@@ -49,8 +50,10 @@ const {
     fetchNow,
 } = fetchApiToRef({ 
     url: "polls/",
-    immediate: !isTokenPath,
+    immediate: false,
 });
+
+getResult.value = props.initialPolls; 
 
 function handleError(err) {
     if (!err) return;

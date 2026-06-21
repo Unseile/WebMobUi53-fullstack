@@ -30,10 +30,6 @@ function openTokenModal(token) {
     copied.value = false;
 }
 
-function openPollPage(token) {
-  window.location.href = `/polls/${token}`;
-}
-
 function closeTokenModal() {
   showTokenModal.value = false;
   selectedToken.value = '';
