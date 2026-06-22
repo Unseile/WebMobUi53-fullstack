@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, computed } from 'vue';
 import { useFetchApi } from '../composables/useFetchApi';
 import { usePolling } from '../composables/usePolling';
+import { formatLocalDateTime } from '../composables/useDateFormat';
 
 const props = defineProps({
   poll: { type: Object, default: null },
@@ -111,13 +112,17 @@ async function refreshResults() {
     }
 }
 
-function getPercentage(option, options) {
-    const total = options.reduce((sum, opt) => sum + (opt.votes_count ?? 0), 0);
-    if (total === 0) return 0;
-    return Math.round((option.votes_count ?? 0) / total * 100);
+const totalVotes = computed(() => {
+    const options = results.value ?? localPoll.value?.options ?? [];
+    return options.reduce((sum, opt) => sum + (opt.votes_count ?? 0), 0);
+});
+
+function getPercentage(option) {
+    if (totalVotes.value === 0) return 0;
+    return Math.round((option.votes_count ?? 0) / totalVotes.value * 100);
 }
 
-usePolling(refreshResults, 2000);
+usePolling(refreshResults, 2000, true);
 
 onMounted(() => {
   if (!localPoll.value) loadPollFromToken();
@@ -136,7 +141,7 @@ onMounted(() => {
 
       <!-- Sondage expiré -->
       <div v-if="isPollExpired" class="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-600">
-          Ce sondage est terminé depuis le {{ new Date(localPoll.ends_at).toLocaleString('fr-CH') }}.
+          Ce sondage est terminé depuis le {{ formatLocalDateTime(localPoll.ends_at) }}.
           Il n'est plus possible de voter.
       </div>
 
@@ -178,7 +183,7 @@ onMounted(() => {
             <div class="flex justify-between text-sm mb-1">
               <span>{{ opt.label }}</span>
               <span class="text-gray-500">
-                {{ opt.votes_count ?? 0 }} votes ({{ getPercentage(opt, results ?? localPoll.options) }}%)
+                {{ opt.votes_count ?? 0 }} votes ({{ getPercentage(opt) }}%)
               </span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-4">

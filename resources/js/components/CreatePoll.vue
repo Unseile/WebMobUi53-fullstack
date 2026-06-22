@@ -190,9 +190,7 @@ async function submitForm() {
                     {{ loading ? 'Création...' : 'Créer' }}
                 </button>
                 <button
-                    @click="emit('cancel')"
-                    class="px-4 py-2 bg-gray-500 rounded hover:bg-gray-600"
-                >
+                    @click="emit('cancel')" class="px-4 py-2 bg-gray-500 rounded hover:bg-gray-600">
                     Annuler
                 </button>
             </div>

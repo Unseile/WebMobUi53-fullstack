@@ -1,6 +1,7 @@
 <script setup>
   import { ref } from 'vue';
   import {useFetchApi} from '../composables/useFetchApi';
+  import { formatLocalDateTime } from '../composables/useDateFormat';
 
   defineProps({
     polls: { type: Array, default: () => [] },
@@ -69,9 +70,13 @@ function copyLink() {
         <td class="border px-3 py-2">{{ poll.id }}</td>
         <td class="border px-3 py-2">{{ poll.title || '-' }}</td>
         <td class="border px-3 py-2">{{ poll.question }}</td>
-        <td class="border px-3 py-2">{{ poll.is_draft ? 'Oui' : 'Non' }}</td>
-        <td class="border px-3 py-2">{{ poll.started_at || '-' }}</td>
-        <td class="border px-3 py-2">{{ poll.ends_at || '-' }}</td>
+        <td class="border px-3 py-2">
+            <span v-if="poll.is_draft">Brouillon</span>
+            <span v-else-if="poll.started_at && new Date(poll.started_at) > new Date()">Planifié</span>
+            <span v-else>Actif</span>
+        </td>
+        <td class="border px-3 py-2">{{ poll.started_at ? formatLocalDateTime(poll.started_at) : '-' }}</td>
+        <td class="border px-3 py-2">{{ poll.ends_at ? formatLocalDateTime(poll.ends_at) : '-' }}</td>
         <td class="border px-3 py-2"><button @click="openTokenModal(poll.secret_token)" class="px-2 mx-2 cursor-pointer text-sm bg-purple-800 rounded hover:bg-purple-700">token</button></td>
         <td class="border px-3 py-2"><button @click="emit('show-poll', poll)" class="px-2 mx-2 cursor-pointer text-sm bg-green-700 rounded hover:bg-green-600">voir</button></td>
         <td><button @click="emit('edit-poll', poll)" class="px-2 cursor-pointer">✏️</button></td>

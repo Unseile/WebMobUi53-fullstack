@@ -71,7 +71,7 @@ class ApiPollController extends Controller
             'question'               => $validated['question'],
             'title'                  => $validated['title'] ?? null,
             'secret_token'           => Str::uuid(),
-            'is_draft'               => !($validated['start_now'] ?? false),
+            'is_draft'               => !$startNow && !$scheduledAt,
             'allow_multiple_choices' => $validated['allow_multiple_choices'] ?? false,
             'allow_vote_change'      => false,
             'results_public'         => $validated['results_public'] ?? false,
@@ -119,7 +119,7 @@ class ApiPollController extends Controller
             'allow_multiple_choices' => $validated['allow_multiple_choices'] ?? $poll->allow_multiple_choices,
             'results_public'         => $validated['results_public'] ?? $poll->results_public,
             'ends_at'                => $validated['ends_at'] ?? $poll->ends_at,
-            'is_draft'               => $startNow ? false : $poll->is_draft,
+            'is_draft'               => $startNow ? false : ($scheduledAt ? false : $poll->is_draft),
             'started_at'             => $startNow ? now() : ($scheduledAt ?? $poll->started_at),
         ]);
 
@@ -169,6 +169,10 @@ class ApiPollController extends Controller
 
         if ($poll->is_draft) {
             return response()->json(['message' => 'Ce sondage est en brouillon.'], 403);
+        }
+
+        if ($poll->started_at && now()->isBefore($poll->started_at)) {
+        return response()->json(['message' => 'Ce sondage n\'a pas encore démarré.'], 403);
         }
 
         if ($poll->ends_at && now()->isAfter($poll->ends_at)) {
